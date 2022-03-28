@@ -404,7 +404,7 @@ void StvItemModel::LoadFolderArray(obs_data_array_t *folder_data, QStandardItem 
 				continue;
 
 			{
-				OBSSourceAutoRelease source = obs_scene_get_source(scene);
+				OBSSource source = obs_scene_get_source(scene);
 				OBSWeakSource weak = obs_source_get_weak_source(source);
 
 				StvSceneItem *new_scene_item = new StvSceneItem(item_name, weak);
