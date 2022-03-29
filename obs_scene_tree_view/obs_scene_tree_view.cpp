@@ -175,11 +175,6 @@ void ObsSceneTreeView::on_scene_tree_items_rowsRemoved()
 	this->SaveSceneTree();
 }
 
-inline QString QTStr(const char *text, QMainWindow *main_window = reinterpret_cast<QMainWindow*>(obs_frontend_get_main_window()))
-{
-	return main_window->tr(text);
-}
-
 void ObsSceneTreeView::on_stvTree_customContextMenuRequested(const QPoint &pos)
 {
 	QStandardItem *item = this->_scene_tree_items.itemFromIndex(this->_stv_dock.stvTree->indexAt(pos));

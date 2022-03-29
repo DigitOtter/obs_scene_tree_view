@@ -27,8 +27,3 @@ void StvItemView::EditSelectedItem()
 {
 	this->edit(this->currentIndex());
 }
-
-//bool StvItemView::edit(const QModelIndex &index, EditTrigger trigger, QEvent *event)
-//{
-//	return QTreeView::edit(index, trigger, event);
-//}

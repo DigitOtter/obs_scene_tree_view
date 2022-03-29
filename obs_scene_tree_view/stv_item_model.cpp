@@ -1,7 +1,8 @@
 #include "obs_scene_tree_view/stv_item_model.h"
 
-#include <QtWidgets/QMainWindow>
+#include <QMessageBox>
 #include <QMimeData>
+#include <QtWidgets/QMainWindow>
 
 
 StvFolderItem::StvFolderItem(const QString &text)
@@ -298,9 +299,55 @@ void StvItemModel::on_itemChanged(QStandardItem *item)
 	{
 		obs_weak_source_t *weak = item->data(QDATA_ROLE::OBS_SCENE).value<obs_weak_source_ptr>().ptr;
 		OBSSource source = OBSGetStrongRef(weak);
+		assert(source);
 
-		const std::string name = item->text().toStdString();
-		obs_source_set_name(source, name.c_str());
+		QString name = item->text();
+		name = name.remove(QRegExp("\\s+$")).remove(QRegExp("^\\s+"));		// Remove starting and trailing whitespaces
+		if(name.isEmpty())
+		{
+			{
+				const QSignalBlocker signal_blocker(this);
+
+				const char *prev_name = obs_source_get_name(source);
+				item->setText(prev_name);
+			}
+
+			QMessageBox mb(QMessageBox::Warning, QTStr("NoNameEntered.Title"), QTStr("NoNameEntered.Text"),
+			               QMessageBox::Ok, reinterpret_cast<QMainWindow*>(obs_frontend_get_main_window()));
+			mb.setTextFormat(Qt::RichText);
+			mb.setButtonText(QMessageBox::Ok, QTStr("OK"));
+			mb.exec();
+
+			return;
+		}
+
+		// Check that item name is unique
+		std::string str_name = name.toStdString();
+		if(OBSSourceAutoRelease(obs_get_source_by_name(str_name.c_str())).Get() != source.Get())
+		{
+			{
+				const QSignalBlocker signal_blocker(this);
+
+				const char *prev_name = obs_source_get_name(source);
+				item->setText(prev_name);
+			}
+
+			QMessageBox mb(QMessageBox::Warning, QTStr("NameExists.Title"), QTStr("NameExists.Text"),
+			               QMessageBox::Ok, reinterpret_cast<QMainWindow*>(obs_frontend_get_main_window()));
+			mb.setTextFormat(Qt::RichText);
+			mb.setButtonText(QMessageBox::Ok, QTStr("OK"));
+			mb.exec();
+		}
+		else
+		{
+			{
+				const QSignalBlocker signal_blocker(this);
+
+				item->setText(name);
+			}
+
+			obs_source_set_name(source, str_name.c_str());
+		}
 	}
 	else
 	{

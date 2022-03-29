@@ -6,6 +6,7 @@
 #include <obs-frontend-api.h>
 
 #include <QStandardItemModel>
+#include <QtWidgets/QMainWindow>
 
 #include <string_view>
 
@@ -98,9 +99,12 @@ class StvItemModel
 		void LoadFolderArray(obs_data_array_t *folder_data, QStandardItem &folder);
 
 		QString CreateUniqueFolderName(QStandardItem *folder_item, QStandardItem *parent);
-
-		friend class StvFolderItem;
-		friend class StvSceneItem;
 };
+
+// Use OBS locale for translation
+inline QString QTStr(const char *text, QMainWindow *main_window = reinterpret_cast<QMainWindow*>(obs_frontend_get_main_window()))
+{
+	return main_window->tr(text);
+}
 
 #endif // STV_ITEM_MODEL_H

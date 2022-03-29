@@ -46,6 +46,7 @@ class ObsSceneTreeView
 		void SelectCurrentScene();
 		void RemoveFolder(QStandardItem *folder);
 
+		// Copied from OBS, OBSBasic::CreatePerSceneTransitionMenu()
 		QMenu *CreatePerSceneTransitionMenu(QMainWindow *main_window);
 
 		inline static void obs_frontend_event_cb(enum obs_frontend_event event, void *private_data)
