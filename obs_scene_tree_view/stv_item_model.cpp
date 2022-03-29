@@ -31,9 +31,7 @@ int StvSceneItem::type() const
 
 
 StvItemModel::StvItemModel()
-{
-	//QObject::connect(this, &QStandardItemModel::itemChanged, this, &StvItemModel::on_itemChanged);
-}
+{}
 
 StvItemModel::~StvItemModel()
 {
@@ -314,74 +312,6 @@ QString StvItemModel::CreateUniqueFolderName(QStandardItem *folder_item, QStanda
 	}
 
 	return folder_name;
-}
-
-void StvItemModel::on_itemChanged(QStandardItem *item)
-{
-	if(item->type() == SCENE)
-	{
-		obs_weak_source_t *weak = item->data(QDATA_ROLE::OBS_SCENE).value<obs_weak_source_ptr>().ptr;
-		OBSSource source = OBSGetStrongRef(weak);
-		assert(source);
-
-		QString name = item->text();
-		name = name.remove(QRegExp("\\s+$")).remove(QRegExp("^\\s+"));		// Remove starting and trailing whitespaces
-		if(name.isEmpty())
-		{
-			{
-				const QSignalBlocker signal_blocker(this);
-
-				const char *prev_name = obs_source_get_name(source);
-				item->setText(prev_name);
-			}
-
-			QMessageBox mb(QMessageBox::Warning, QTStr("NoNameEntered.Title"), QTStr("NoNameEntered.Text"),
-			               QMessageBox::Ok, reinterpret_cast<QMainWindow*>(obs_frontend_get_main_window()));
-			mb.setTextFormat(Qt::RichText);
-			mb.setButtonText(QMessageBox::Ok, QTStr("OK"));
-			mb.exec();
-
-			return;
-		}
-
-		// Check that item name is unique
-		const char *prev_name = obs_source_get_name(source);
-
-		std::string str_name = name.toStdString();
-		OBSSourceAutoRelease named_source = obs_get_source_by_name(str_name.c_str());
-		if(named_source && named_source.Get() != source.Get())
-		{
-			{
-				const QSignalBlocker signal_blocker(this);
-				item->setText(prev_name);
-			}
-
-			QMessageBox mb(QMessageBox::Warning, QTStr("NameExists.Title"), QTStr("NameExists.Text"),
-			               QMessageBox::Ok, reinterpret_cast<QMainWindow*>(obs_frontend_get_main_window()));
-			mb.setTextFormat(Qt::RichText);
-			mb.setButtonText(QMessageBox::Ok, QTStr("OK"));
-			mb.exec();
-		}
-		else
-		{
-//			{
-//				const QSignalBlocker signal_blocker(this);
-
-//				item->setText(name);
-//			}
-
-			QMainWindow *main_window = reinterpret_cast<QMainWindow*>(obs_frontend_get_main_window());
-			QMetaObject::invokeMethod(main_window, "RenameSources", Q_ARG(OBSSource, source), Q_ARG(QString, name), Q_ARG(QString, prev_name));
-
-			//obs_source_set_name(source, str_name.c_str());
-		}
-	}
-	else
-	{
-		assert(item->type() == FOLDER);
-
-		item->setText(this->CreateUniqueFolderName(item, this->GetParentOrRoot(item->index())));
-	}
 }
 
 void StvItemModel::MoveSceneItem(obs_weak_source_t *source, int row, QStandardItem *parent_item)

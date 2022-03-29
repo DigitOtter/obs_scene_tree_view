@@ -75,13 +75,10 @@ class StvItemModel
 
 		QString CreateUniqueFolderName(QStandardItem *folder_item, QStandardItem *parent);
 
-	protected slots:
-		void on_itemChanged(QStandardItem *item);
-
 	private:
 		struct mime_item_data_t
 		{
-				QITEM_TYPE Type;
+			QITEM_TYPE Type;
 			void *Data;			// Either QStandardItem* (if Type == FOLDER) or obs_weak_source_t* (if Type == SCENE)
 		};
 
