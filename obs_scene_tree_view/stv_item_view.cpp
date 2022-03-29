@@ -1,4 +1,4 @@
-#include "stv_item_view.h"
+#include "obs_scene_tree_view/stv_item_view.h"
 
 
 StvItemView::StvItemView(QWidget *parent)

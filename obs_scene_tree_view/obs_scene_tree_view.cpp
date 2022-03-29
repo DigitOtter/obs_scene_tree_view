@@ -1,9 +1,11 @@
-#include "obs_scene_tree_view.h"
+#include "obs_scene_tree_view/obs_scene_tree_view.h"
 
 #include "obs_scene_tree_view/version.h"
 
+#include <QLineEdit>
 #include <QtWidgets/QAction>
 #include <QtWidgets/QComboBox>
+#include <QtWidgets/QListWidget>
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QSpinBox>
@@ -71,6 +73,10 @@ ObsSceneTreeView::ObsSceneTreeView(QMainWindow *main_window)
 	QObject::connect(this->_stv_dock.stvAdd, &QToolButton::released, this->_add_scene_act, &QAction::trigger);
 	QObject::connect(&this->_scene_tree_items, &QAbstractItemModel::rowsRemoved, this, &ObsSceneTreeView::on_scene_tree_items_rowsRemoved);
 
+	QObject::connect(this->_stv_dock.stvTree->itemDelegate(), SIGNAL(closeEditor(QWidget*,QAbstractItemDelegate::EndEditHint)),
+	                 this, SLOT(on_SceneNameEdited(QWidget*,QAbstractItemDelegate::EndEditHint)));
+	                //main_window, SLOT(SceneNameEdited(QWidget*,QAbstractItemDelegate::EndEditHint)));
+
 	this->_stv_dock.stvTree->setModel(&(this->_scene_tree_items));
 }
 
@@ -79,18 +85,6 @@ ObsSceneTreeView::~ObsSceneTreeView()
 	// Remove frontend cb
 	obs_frontend_remove_save_callback(&ObsSceneTreeView::obs_frontend_save_cb, this);
 	obs_frontend_remove_event_callback(&ObsSceneTreeView::obs_frontend_event_cb, this);
-}
-
-void ObsSceneTreeView::UpdateTreeView()
-{
-	obs_frontend_source_list scene_list = {};
-	obs_frontend_get_scenes(&scene_list);
-
-	this->_scene_tree_items.UpdateTree(scene_list, this->_stv_dock.stvTree->currentIndex());
-
-	obs_frontend_source_list_free(&scene_list);
-
-	this->SaveSceneTree();
 }
 
 void ObsSceneTreeView::SaveSceneTree()
@@ -110,6 +104,18 @@ void ObsSceneTreeView::LoadSceneTree()
 
 	OBSDataAutoRelease stv_data = obs_data_create_from_json_file(stv_config_file_path);
 	this->_scene_tree_items.LoadSceneTree(stv_data);
+}
+
+void ObsSceneTreeView::UpdateTreeView()
+{
+	obs_frontend_source_list scene_list = {};
+	obs_frontend_get_scenes(&scene_list);
+
+	this->_scene_tree_items.UpdateTree(scene_list, this->_stv_dock.stvTree->currentIndex());
+
+	obs_frontend_source_list_free(&scene_list);
+
+	this->SaveSceneTree();
 }
 
 void ObsSceneTreeView::on_stvTree_clicked(const QModelIndex &index)
@@ -287,6 +293,24 @@ void ObsSceneTreeView::on_stvTree_customContextMenuRequested(const QPoint &pos)
 //	popup.addAction(gridAction);
 
 	popup.exec(QCursor::pos());
+}
+
+void ObsSceneTreeView::on_SceneNameEdited(QWidget *editor, QAbstractItemDelegate::EndEditHint hint)
+{
+	QStandardItem *selected = this->_scene_tree_items.itemFromIndex(this->_stv_dock.stvTree->currentIndex());
+	if(selected->type() == StvItemModel::SCENE)
+	{
+		QMainWindow *main_window = reinterpret_cast<QMainWindow*>(obs_frontend_get_main_window());
+		QMetaObject::invokeMethod(main_window, "SceneNameEdited", Q_ARG(QWidget*, editor), Q_ARG(QAbstractItemDelegate::EndEditHint, hint));
+	}
+	else
+	{
+		QLineEdit *edit = qobject_cast<QLineEdit *>(editor);
+		std::string text = QT_TO_UTF8(edit->text().trimmed());
+
+		selected->setText(this->_scene_tree_items.CreateUniqueFolderName(selected,
+		                                                                 this->_scene_tree_items.GetParentOrRoot(selected->index())));
+	}
 }
 
 void ObsSceneTreeView::SelectCurrentScene()

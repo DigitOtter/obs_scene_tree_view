@@ -1,6 +1,7 @@
 #include "obs_scene_tree_view/stv_item_model.h"
 
 #include <QMessageBox>
+#include <QLineEdit>
 #include <QMimeData>
 #include <QtWidgets/QMainWindow>
 
@@ -31,7 +32,7 @@ int StvSceneItem::type() const
 
 StvItemModel::StvItemModel()
 {
-	QObject::connect(this, &QStandardItemModel::itemChanged, this, &StvItemModel::on_itemChanged);
+	//QObject::connect(this, &QStandardItemModel::itemChanged, this, &StvItemModel::on_itemChanged);
 }
 
 StvItemModel::~StvItemModel()
@@ -293,6 +294,28 @@ QStandardItem *StvItemModel::GetParentOrRoot(const QModelIndex &index)
 	return selected;
 }
 
+QString StvItemModel::CreateUniqueFolderName(QStandardItem *folder_item, QStandardItem *parent)
+{
+	// Check that name is unique
+	QString folder_name = folder_item->text();
+	if(!this->CheckFolderNameUniqueness(folder_name, parent, folder_item))
+	{
+		QString format = folder_name.replace(QRegExp("\\d+$"), "%1");
+
+		size_t i = 0;
+		QString name;
+		do
+		{
+			name = format.arg(QString::number(++i));
+		}
+		while(!this->CheckFolderNameUniqueness(name, parent, folder_item));
+
+		folder_name = name;
+	}
+
+	return folder_name;
+}
+
 void StvItemModel::on_itemChanged(QStandardItem *item)
 {
 	if(item->type() == SCENE)
@@ -322,13 +345,14 @@ void StvItemModel::on_itemChanged(QStandardItem *item)
 		}
 
 		// Check that item name is unique
+		const char *prev_name = obs_source_get_name(source);
+
 		std::string str_name = name.toStdString();
-		if(OBSSourceAutoRelease(obs_get_source_by_name(str_name.c_str())).Get() != source.Get())
+		OBSSourceAutoRelease named_source = obs_get_source_by_name(str_name.c_str());
+		if(named_source && named_source.Get() != source.Get())
 		{
 			{
 				const QSignalBlocker signal_blocker(this);
-
-				const char *prev_name = obs_source_get_name(source);
 				item->setText(prev_name);
 			}
 
@@ -340,13 +364,16 @@ void StvItemModel::on_itemChanged(QStandardItem *item)
 		}
 		else
 		{
-			{
-				const QSignalBlocker signal_blocker(this);
+//			{
+//				const QSignalBlocker signal_blocker(this);
 
-				item->setText(name);
-			}
+//				item->setText(name);
+//			}
 
-			obs_source_set_name(source, str_name.c_str());
+			QMainWindow *main_window = reinterpret_cast<QMainWindow*>(obs_frontend_get_main_window());
+			QMetaObject::invokeMethod(main_window, "RenameSources", Q_ARG(OBSSource, source), Q_ARG(QString, name), Q_ARG(QString, prev_name));
+
+			//obs_source_set_name(source, str_name.c_str());
 		}
 	}
 	else
@@ -468,26 +495,4 @@ void StvItemModel::LoadFolderArray(obs_data_array_t *folder_data, QStandardItem 
 			folder.appendRow(new_folder_item);
 		}
 	}
-}
-
-QString StvItemModel::CreateUniqueFolderName(QStandardItem *folder_item, QStandardItem *parent)
-{
-	// Check that name is unique
-	QString folder_name = folder_item->text();
-	if(!this->CheckFolderNameUniqueness(folder_name, parent, folder_item))
-	{
-		QString format = folder_name.replace(QRegExp("\\d+$"), "%1");
-
-		size_t i = 0;
-		QString name;
-		do
-		{
-			name = format.arg(QString::number(++i));
-		}
-		while(!this->CheckFolderNameUniqueness(name, parent, folder_item));
-
-		folder_name = name;
-	}
-
-	return folder_name;
 }

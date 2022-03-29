@@ -3,6 +3,7 @@
 
 #include <map>
 
+#include <QAbstractItemDelegate>
 #include <QtWidgets/QDockWidget>
 
 #include "obs_scene_tree_view/stv_item_model.h"
@@ -19,12 +20,12 @@ class ObsSceneTreeView
 		ObsSceneTreeView(QMainWindow *main_window);
 		virtual ~ObsSceneTreeView() override;
 
-		void UpdateTreeView();
-
 		void SaveSceneTree();
 		void LoadSceneTree();
 
 	protected slots:
+		void UpdateTreeView();
+
 		void on_stvTree_clicked(const QModelIndex &index);
 		void on_stvAddFolder_clicked();
 		void on_stvRemove_released();
@@ -32,6 +33,8 @@ class ObsSceneTreeView
 
 		// Copied from OBS, OBSBasic::on_scenes_customContextMenuRequested()
 		void on_stvTree_customContextMenuRequested(const QPoint &pos);
+
+		void on_SceneNameEdited(QWidget *editor, QAbstractItemDelegate::EndEditHint hint = QAbstractItemDelegate::NoHint);
 
 	private:
 		QAction *_add_scene_act = nullptr;
