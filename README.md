@@ -45,3 +45,8 @@ pikaur -S obs-scene-tree-view-git
 ### Windows
 
 Visit [Releases](https://github.com/DigitOtter/obs_scene_tree_view/releases) and follow the installation instructions for the newest version.
+
+## Todos
+
+- [ ] Undo/Redo scene rename does not update SceneTree
+
