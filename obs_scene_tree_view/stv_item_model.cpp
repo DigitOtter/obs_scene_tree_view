@@ -84,14 +84,10 @@ bool StvItemModel::dropMimeData(const QMimeData *data, Qt::DropAction action, in
 	Q_UNUSED(column);
 
 	QStandardItem *parent_item = this->itemFromIndex(parent);
-
-	if(parent_item)
-	{
-		if(parent_item->type() == QITEM_TYPE::SCENE)
-			return false;
-	}
-	else
+	if(!parent_item)
 		parent_item = this->invisibleRootItem();
+	else if(parent_item->type() == QITEM_TYPE::SCENE)
+		return false;
 
 	if(row < 0)
 		row = 0;
@@ -174,10 +170,6 @@ void StvItemModel::UpdateTree(obs_frontend_source_list &scene_list, const QModel
 				selected = this->invisibleRootItem();
 				parent = selected;
 			}
-
-			// Set item data
-			const std::string parent_name = parent->text().toStdString();
-			const std::string prev_name   = selected->text().toStdString();
 
 			// Add new item to scene
 			StvSceneItem *pItem = new StvSceneItem(obs_source_get_name(source), scene_it->first);
@@ -402,7 +394,7 @@ void StvItemModel::LoadFolderArray(obs_data_array_t *folder_data, QStandardItem 
 		// Check if this is folder or scene item (only folders have folder_data)
 		if(!folder_data)
 		{
-			// Add scene to folder
+			// Add scene to folder, skip if scene doesn't exist anymore
 			OBSSceneAutoRelease scene = obs_get_scene_by_name(item_name);
 			if(!scene)
 				continue;
