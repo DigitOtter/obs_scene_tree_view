@@ -189,8 +189,6 @@ void StvItemModel::UpdateTree(obs_frontend_source_list &scene_list, const QModel
 		scene_dat = nullptr;
 	}
 
-	obs_frontend_source_list_free(&scene_list);
-
 	// Erase all remaining elements in _scene_tree
 	for(const auto &scene : this->_scenes_in_tree)
 	{
