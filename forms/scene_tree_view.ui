@@ -10,6 +10,9 @@
     <height>263</height>
    </rect>
   </property>
+  <property name="floating">
+   <bool>true</bool>
+  </property>
   <property name="windowTitle">
    <string>SceneTreeView.Title</string>
   </property>
