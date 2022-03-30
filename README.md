@@ -2,6 +2,8 @@
 
 Plugin for OBS that adds a scene tree folder dock
 
+![Screenshot](images/obs_scene_tree_view_example.png)
+
 ## Build
 
 ### Linux
@@ -49,4 +51,5 @@ Visit [Releases](https://github.com/DigitOtter/obs_scene_tree_view/releases) and
 ## Todos
 
 - [ ] Undo/Redo scene rename does not update SceneTree
+- [ ] Add Fullscreen Viewport Projector option to scene context menu
 
