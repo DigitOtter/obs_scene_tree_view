@@ -322,8 +322,6 @@ void ObsSceneTreeView::SelectCurrentScene()
 
 void ObsSceneTreeView::RemoveFolder(QStandardItem *folder)
 {
-	// TODO: Maybe stop Qt signal emission for this. This would prevent uneccary SaveSceneTree calls
-
 	int row = 0;
 	int row_count = folder->rowCount();
 	while(row < row_count)
