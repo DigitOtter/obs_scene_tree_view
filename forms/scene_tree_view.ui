@@ -10,6 +10,9 @@
     <height>263</height>
    </rect>
   </property>
+  <property name="styleSheet">
+   <string notr="true">show-decoration-selected: 1</string>
+  </property>
   <property name="floating">
    <bool>true</bool>
   </property>
