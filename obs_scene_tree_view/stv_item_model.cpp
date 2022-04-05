@@ -253,24 +253,39 @@ OBSSourceAutoRelease StvItemModel::GetCurrentScene()
 	return obs_frontend_preview_program_mode_active() ? obs_frontend_get_current_preview_scene() : obs_frontend_get_current_scene();
 }
 
-void StvItemModel::SaveSceneTree(obs_data_t *root_folder_data)
+void StvItemModel::SaveSceneTree(obs_data_t *root_folder_data, const char *scene_collection)
 {
 	OBSDataArrayAutoRelease folder_data = this->CreateFolderArray(*this->invisibleRootItem());
-	obs_data_set_array(root_folder_data, SCENE_TREE_CONFIG_FOLDER_DATA.data(), folder_data);
+	obs_data_set_array(root_folder_data, scene_collection, folder_data);
 }
 
-void StvItemModel::LoadSceneTree(obs_data_t *root_folder_data)
+void StvItemModel::LoadSceneTree(obs_data_t *root_folder_data, const char *scene_collection)
 {
 	QStandardItem *root_item = this->invisibleRootItem();
 
 	// Erase previous data
-	this->_scenes_in_tree.clear();
-	root_item->removeRows(0, root_item->rowCount());
+	this->CleanupSceneTree();
 
 	// Add loaded data
-	OBSDataArrayAutoRelease folder_array = obs_data_get_array(root_folder_data, SCENE_TREE_CONFIG_FOLDER_DATA.data());
+	OBSDataArrayAutoRelease folder_array = obs_data_get_array(root_folder_data, scene_collection);
 	if(folder_array)
 		this->LoadFolderArray(folder_array, *root_item);
+}
+
+void StvItemModel::CleanupSceneTree()
+{
+	// Remove scene refs
+	for(auto &scene : this->_scenes_in_tree)
+	{
+		obs_weak_source_release(scene.first);
+	}
+
+	this->_scenes_in_tree.clear();
+
+	const auto sig_block = this->blockSignals(true);
+	QStandardItem *root_item = this->invisibleRootItem();
+	root_item->removeRows(0, root_item->rowCount());
+	this->blockSignals(sig_block);
 }
 
 QStandardItem *StvItemModel::GetParentOrRoot(const QModelIndex &index)

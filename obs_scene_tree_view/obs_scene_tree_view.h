@@ -6,6 +6,8 @@
 #include <QAbstractItemDelegate>
 #include <QtWidgets/QDockWidget>
 
+#include <util/util.hpp>
+
 #include "obs_scene_tree_view/stv_item_model.h"
 #include "ui_scene_tree_view.h"
 
@@ -20,8 +22,8 @@ class ObsSceneTreeView
 		ObsSceneTreeView(QMainWindow *main_window);
 		virtual ~ObsSceneTreeView() override;
 
-		void SaveSceneTree();
-		void LoadSceneTree();
+		void SaveSceneTree(const char *scene_collection);
+		void LoadSceneTree(const char *scene_collection);
 
 	protected slots:
 		void UpdateTreeView();
@@ -45,6 +47,7 @@ class ObsSceneTreeView
 		Ui::STVDock _stv_dock;
 
 		StvItemModel _scene_tree_items;
+		BPtr<char> _scene_collection_name = nullptr;
 
 		void SelectCurrentScene();
 		void RemoveFolder(QStandardItem *folder);

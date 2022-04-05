@@ -68,8 +68,9 @@ class StvItemModel
 		QStandardItem *GetCurrentSceneItem();
 		OBSSourceAutoRelease GetCurrentScene();
 
-		void SaveSceneTree(obs_data_t *root_folder_data);
-		void LoadSceneTree(obs_data_t *root_folder_data);
+		void SaveSceneTree(obs_data_t *root_folder_data, const char *scene_collection);
+		void LoadSceneTree(obs_data_t *root_folder_data, const char *scene_collection);
+		void CleanupSceneTree();
 
 		QStandardItem *GetParentOrRoot(const QModelIndex &index);
 

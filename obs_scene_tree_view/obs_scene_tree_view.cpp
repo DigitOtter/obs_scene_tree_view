@@ -12,7 +12,6 @@
 #include <QtWidgets/QWidgetAction>
 
 #include <obs-module.h>
-#include <util/util.hpp>
 #include <util/platform.h>
 
 
@@ -87,23 +86,30 @@ ObsSceneTreeView::~ObsSceneTreeView()
 	obs_frontend_remove_event_callback(&ObsSceneTreeView::obs_frontend_event_cb, this);
 }
 
-void ObsSceneTreeView::SaveSceneTree()
+void ObsSceneTreeView::SaveSceneTree(const char *scene_collection)
 {
+	assert(scene_collection);
+
 	BPtr<char> stv_config_file_path = obs_module_config_path(SCENE_TREE_CONFIG_FILE.data());
 
-	OBSDataAutoRelease stv_data = obs_data_create();
-	this->_scene_tree_items.SaveSceneTree(stv_data);
+	OBSDataAutoRelease stv_data = obs_data_create_from_json_file(stv_config_file_path);
+	if(!stv_data)
+		stv_data = obs_data_create();
+
+	this->_scene_tree_items.SaveSceneTree(stv_data, scene_collection);
 
 	if(!obs_data_save_json(stv_data, stv_config_file_path))
 		blog(LOG_WARNING, "[%s] Failed to save scene tree in '%s'", obs_module_name(), stv_config_file_path.Get());
 }
 
-void ObsSceneTreeView::LoadSceneTree()
+void ObsSceneTreeView::LoadSceneTree(const char *scene_collection)
 {
+	assert(scene_collection);
+
 	BPtr<char> stv_config_file_path = obs_module_config_path(SCENE_TREE_CONFIG_FILE.data());
 
 	OBSDataAutoRelease stv_data = obs_data_create_from_json_file(stv_config_file_path);
-	this->_scene_tree_items.LoadSceneTree(stv_data);
+	this->_scene_tree_items.LoadSceneTree(stv_data, scene_collection);
 }
 
 void ObsSceneTreeView::UpdateTreeView()
@@ -115,7 +121,7 @@ void ObsSceneTreeView::UpdateTreeView()
 
 	obs_frontend_source_list_free(&scene_list);
 
-	this->SaveSceneTree();
+	this->SaveSceneTree(this->_scene_collection_name);
 }
 
 void ObsSceneTreeView::on_stvTree_clicked(const QModelIndex &index)
@@ -160,7 +166,7 @@ void ObsSceneTreeView::on_stvAddFolder_clicked()
 	StvFolderItem *pItem = new StvFolderItem(new_folder_name);
 	selected->insertRow(row, pItem);
 
-	this->SaveSceneTree();
+	this->SaveSceneTree(this->_scene_collection_name);
 }
 
 void ObsSceneTreeView::on_stvRemove_released()
@@ -178,7 +184,7 @@ void ObsSceneTreeView::on_stvRemove_released()
 
 void ObsSceneTreeView::on_scene_tree_items_rowsRemoved()
 {
-	this->SaveSceneTree();
+	this->SaveSceneTree(this->_scene_collection_name);
 }
 
 void ObsSceneTreeView::on_stvTree_customContextMenuRequested(const QPoint &pos)
@@ -455,8 +461,10 @@ void ObsSceneTreeView::ObsFrontendEvent(enum obs_frontend_event event)
 	// Update our tree view when scene list was changed
 	if(event == OBS_FRONTEND_EVENT_FINISHED_LOADING)
 	{
+		this->_scene_collection_name = obs_frontend_get_current_scene_collection();
+
 		// Load saved scene locations, then add any missing items that weren't saved
-		this->LoadSceneTree();
+		this->LoadSceneTree(this->_scene_collection_name);
 		this->UpdateTreeView();
 
 		this->SelectCurrentScene();
@@ -476,10 +484,20 @@ void ObsSceneTreeView::ObsFrontendEvent(enum obs_frontend_event event)
 		this->UpdateTreeView();
 	else if(event == OBS_FRONTEND_EVENT_SCENE_CHANGED || event == OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED)
 		this->SelectCurrentScene();
+	else if(event == OBS_FRONTEND_EVENT_SCENE_COLLECTION_CLEANUP)
+		this->_scene_tree_items.CleanupSceneTree();
+	else if(event == OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING)
+		this->SaveSceneTree(this->_scene_collection_name);
+	else if(event == OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGED)
+	{
+		this->_scene_collection_name = obs_frontend_get_current_scene_collection();
+		this->LoadSceneTree(this->_scene_collection_name);
+		this->UpdateTreeView();
+	}
 }
 
 void ObsSceneTreeView::ObsFrontendSave(obs_data_t */*save_data*/, bool saving)
 {
 	if(saving)
-		this->SaveSceneTree();
+		this->SaveSceneTree(this->_scene_collection_name);
 }
