@@ -31,7 +31,6 @@ class ObsSceneTreeView
 		void on_stvTree_clicked(const QModelIndex &index);
 		void on_stvAddFolder_clicked();
 		void on_stvRemove_released();
-		void on_scene_tree_items_rowsRemoved();
 
 		// Copied from OBS, OBSBasic::on_scenes_customContextMenuRequested()
 		void on_stvTree_customContextMenuRequested(const QPoint &pos);

@@ -282,10 +282,8 @@ void StvItemModel::CleanupSceneTree()
 
 	this->_scenes_in_tree.clear();
 
-	const auto sig_block = this->blockSignals(true);
 	QStandardItem *root_item = this->invisibleRootItem();
 	root_item->removeRows(0, root_item->rowCount());
-	this->blockSignals(sig_block);
 }
 
 QStandardItem *StvItemModel::GetParentOrRoot(const QModelIndex &index)

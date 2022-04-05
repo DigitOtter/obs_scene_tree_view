@@ -70,7 +70,6 @@ ObsSceneTreeView::ObsSceneTreeView(QMainWindow *main_window)
 	obs_frontend_add_save_callback(&ObsSceneTreeView::obs_frontend_save_cb, this);
 
 	QObject::connect(this->_stv_dock.stvAdd, &QToolButton::released, this->_add_scene_act, &QAction::trigger);
-	QObject::connect(&this->_scene_tree_items, &QAbstractItemModel::rowsRemoved, this, &ObsSceneTreeView::on_scene_tree_items_rowsRemoved);
 
 	QObject::connect(this->_stv_dock.stvTree->itemDelegate(), SIGNAL(closeEditor(QWidget*,QAbstractItemDelegate::EndEditHint)),
 	                 this, SLOT(on_SceneNameEdited(QWidget*,QAbstractItemDelegate::EndEditHint)));
@@ -180,11 +179,6 @@ void ObsSceneTreeView::on_stvRemove_released()
 		else
 			this->RemoveFolder(selected);
 	}
-}
-
-void ObsSceneTreeView::on_scene_tree_items_rowsRemoved()
-{
-	this->SaveSceneTree(this->_scene_collection_name);
 }
 
 void ObsSceneTreeView::on_stvTree_customContextMenuRequested(const QPoint &pos)
