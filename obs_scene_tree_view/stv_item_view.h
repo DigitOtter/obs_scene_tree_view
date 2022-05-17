@@ -22,6 +22,8 @@ class StvItemView
 
 		void EditSelectedItem();
 
+		void mouseDoubleClickEvent(QMouseEvent *event) override;
+
 	private:
 		StvItemModel *_model = nullptr;
 };
