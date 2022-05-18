@@ -8,6 +8,7 @@
 
 #include <util/util.hpp>
 
+#include "obs-data.h"
 #include "obs_scene_tree_view/stv_item_model.h"
 #include "ui_scene_tree_view.h"
 

@@ -184,8 +184,6 @@ void ObsSceneTreeView::on_stvRemove_released()
 void ObsSceneTreeView::on_stvTree_customContextMenuRequested(const QPoint &pos)
 {
 	QStandardItem *item = this->_scene_tree_items.itemFromIndex(this->_stv_dock.stvTree->indexAt(pos));
-	if(!item || item->type() != StvItemModel::SCENE)
-		return;
 
 	QMainWindow *main_window = reinterpret_cast<QMainWindow*>(obs_frontend_get_main_window());
 
@@ -195,7 +193,7 @@ void ObsSceneTreeView::on_stvTree_customContextMenuRequested(const QPoint &pos)
 	popup.addAction(QTStr("Add"),
 	                main_window, SLOT(on_actionAddScene_triggered()));
 
-	if (item)
+	if(item && item->type() == StvItemModel::SCENE)
 	{
 		QAction *copyFilters = new QAction(QTStr("Copy.Filters"), this);
 		copyFilters->setEnabled(false);
