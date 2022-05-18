@@ -302,6 +302,8 @@ QString StvItemModel::CreateUniqueFolderName(QStandardItem *folder_item, QStanda
 	if(!this->CheckFolderNameUniqueness(folder_name, parent, folder_item))
 	{
 		QString format = folder_name.replace(QRegExp("\\d+$"), "%1");
+		if(!format.endsWith("%1"))
+			format += " %1";
 
 		size_t i = 0;
 		QString name;
