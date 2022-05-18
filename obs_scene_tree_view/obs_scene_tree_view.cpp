@@ -57,6 +57,9 @@ ObsSceneTreeView::ObsSceneTreeView(QMainWindow *main_window)
       _add_scene_act(main_window->findChild<QAction*>("actionAddScene")),
       _remove_scene_act(main_window->findChild<QAction*>("actionRemoveScene"))
 {
+	config_set_default_bool(obs_frontend_get_global_config(), "SceneTreeView", "ShowSceneIcons", false);
+	config_set_default_bool(obs_frontend_get_global_config(), "SceneTreeView", "ShowFolderIcons", false);
+
 	assert(this->_add_scene_act);
 	assert(this->_remove_scene_act);
 
@@ -193,90 +196,114 @@ void ObsSceneTreeView::on_stvTree_customContextMenuRequested(const QPoint &pos)
 	popup.addAction(QTStr("Add"),
 	                main_window, SLOT(on_actionAddScene_triggered()));
 
-	if(item && item->type() == StvItemModel::SCENE)
+	if(item)
 	{
-		QAction *copyFilters = new QAction(QTStr("Copy.Filters"), this);
-		copyFilters->setEnabled(false);
-		connect(copyFilters, SIGNAL(triggered()),
-		        main_window, SLOT(SceneCopyFilters()));
-		QAction *pasteFilters = new QAction(QTStr("Paste.Filters"), this);
-//		pasteFilters->setEnabled(
-//		    !obs_weak_source_expired(copyFiltersSource));			// Cannot use (we can't check copyFiltersSource, as it's a private member of OBSBasic)
-		connect(pasteFilters, SIGNAL(triggered()),
-		        main_window, SLOT(ScenePasteFilters()));
+		if(item->type() == StvItemModel::SCENE)
+		{
+			QAction *copyFilters = new QAction(QTStr("Copy.Filters"), this);
+			copyFilters->setEnabled(false);
+			connect(copyFilters, SIGNAL(triggered()),
+			        main_window, SLOT(SceneCopyFilters()));
+			QAction *pasteFilters = new QAction(QTStr("Paste.Filters"), this);
+//			pasteFilters->setEnabled(
+//			    !obs_weak_source_expired(copyFiltersSource));			// Cannot use (we can't check copyFiltersSource, as it's a private member of OBSBasic)
+			connect(pasteFilters, SIGNAL(triggered()),
+			        main_window, SLOT(ScenePasteFilters()));
+
+			popup.addSeparator();
+			popup.addAction(QTStr("Duplicate"),
+			                main_window, SLOT(DuplicateSelectedScene()));
+			popup.addAction(copyFilters);
+			popup.addAction(pasteFilters);
+			popup.addSeparator();
+			QAction *rename = popup.addAction(QTStr("Rename"));
+			QObject::connect(rename, SIGNAL(triggered()), this->_stv_dock.stvTree, SLOT(EditSelectedItem()));
+			popup.addAction(QTStr("Remove"),
+			                main_window, SLOT(RemoveSelectedScene()));
+			popup.addSeparator();
+
+//			order.addAction(QTStr("Basic.MainMenu.Edit.Order.MoveUp"),
+//			                main_window, SLOT(on_actionSceneUp_triggered()));
+//			order.addAction(QTStr("Basic.MainMenu.Edit.Order.MoveDown"),
+//			        this, SLOT(on_actionSceneDown_triggered()));
+//			order.addSeparator();
+
+//			order.addAction(QTStr("Basic.MainMenu.Edit.Order.MoveToTop"),
+//			        this, SLOT(MoveSceneToTop()));
+//			order.addAction(QTStr("Basic.MainMenu.Edit.Order.MoveToBottom"),
+//				    this, SLOT(MoveSceneToBottom()));
+//			popup.addMenu(&order);
+
+//			popup.addSeparator();
+
+//			delete sceneProjectorMenu;
+//			sceneProjectorMenu = new QMenu(QTStr("SceneProjector"));
+//			AddProjectorMenuMonitors(sceneProjectorMenu, this,
+//				         SLOT(OpenSceneProjector()));
+//			popup.addMenu(sceneProjectorMenu);
+
+			QAction *sceneWindow = popup.addAction(QTStr("SceneWindow"),
+			                                       main_window, SLOT(OpenSceneWindow()));
+
+			popup.addAction(sceneWindow);
+			popup.addAction(QTStr("Screenshot.Scene"),
+			                main_window, SLOT(ScreenshotScene()));
+			popup.addSeparator();
+			popup.addAction(QTStr("Filters"),
+			                main_window, SLOT(OpenSceneFilters()));
+
+			popup.addSeparator();
+
+			this->_per_scene_transition_menu.reset(CreatePerSceneTransitionMenu(main_window));
+			popup.addMenu(this->_per_scene_transition_menu.get());
+
+			/* ---------------------- */
+
+			QAction *multiviewAction = popup.addAction(QTStr("ShowInMultiview"));
+
+			OBSSourceAutoRelease source = this->_scene_tree_items.GetCurrentScene();
+			OBSDataAutoRelease data = obs_source_get_private_settings(source);
+
+			obs_data_set_default_bool(data, "show_in_multiview", true);
+			bool show = obs_data_get_bool(data, "show_in_multiview");
+
+			multiviewAction->setCheckable(true);
+			multiviewAction->setChecked(show);
+
+			auto showInMultiview = [main_window](OBSData data) {
+				bool show =
+				    obs_data_get_bool(data, "show_in_multiview");
+				obs_data_set_bool(data, "show_in_multiview", !show);
+				// Workaround because OBSProjector::UpdateMultiviewProjectors() isn't available to modules
+				QMetaObject::invokeMethod(main_window, "ScenesReordered");
+			};
+
+			connect(multiviewAction, &QAction::triggered,
+			    std::bind(showInMultiview, data.Get()));
+
+			copyFilters->setEnabled(obs_source_filter_count(source) > 0);
+		}
 
 		popup.addSeparator();
-		popup.addAction(QTStr("Duplicate"),
-		                main_window, SLOT(DuplicateSelectedScene()));
-		popup.addAction(copyFilters);
-		popup.addAction(pasteFilters);
-		popup.addSeparator();
-		QAction *rename = popup.addAction(QTStr("Rename"));
-		QObject::connect(rename, SIGNAL(triggered()), this->_stv_dock.stvTree, SLOT(EditSelectedItem()));
-		popup.addAction(QTStr("Remove"),
-		                main_window, SLOT(RemoveSelectedScene()));
-		popup.addSeparator();
 
-//		order.addAction(QTStr("Basic.MainMenu.Edit.Order.MoveUp"),
-//		                main_window, SLOT(on_actionSceneUp_triggered()));
-//		order.addAction(QTStr("Basic.MainMenu.Edit.Order.MoveDown"),
-//		        this, SLOT(on_actionSceneDown_triggered()));
-//		order.addSeparator();
+		// Enable/disable scene or folder icon
+		const auto toggleName = item->type() == StvItemModel::SCENE ? obs_module_text("SceneTreeView.ToggleSceneIcons") :
+		                                                              obs_module_text("SceneTreeView.ToggleFolderIcons");
 
-//		order.addAction(QTStr("Basic.MainMenu.Edit.Order.MoveToTop"),
-//		        this, SLOT(MoveSceneToTop()));
-//		order.addAction(QTStr("Basic.MainMenu.Edit.Order.MoveToBottom"),
-//		        this, SLOT(MoveSceneToBottom()));
-//		popup.addMenu(&order);
+		QAction *toggleIconAction = popup.addAction(toggleName);
+		toggleIconAction->setCheckable(true);
 
-//		popup.addSeparator();
+		const auto configName = item->type() == StvItemModel::SCENE ? "ShowSceneIcons" : "ShowFolderIcons";
+		const bool showIcon = config_get_bool(obs_frontend_get_global_config(), "SceneTreeView", configName);
 
-//		delete sceneProjectorMenu;
-//		sceneProjectorMenu = new QMenu(QTStr("SceneProjector"));
-//		AddProjectorMenuMonitors(sceneProjectorMenu, this,
-//		             SLOT(OpenSceneProjector()));
-//		popup.addMenu(sceneProjectorMenu);
+		toggleIconAction->setChecked(showIcon);
 
-		QAction *sceneWindow = popup.addAction(QTStr("SceneWindow"),
-		                                       main_window, SLOT(OpenSceneWindow()));
-
-		popup.addAction(sceneWindow);
-		popup.addAction(QTStr("Screenshot.Scene"),
-		                main_window, SLOT(ScreenshotScene()));
-		popup.addSeparator();
-		popup.addAction(QTStr("Filters"),
-		                main_window, SLOT(OpenSceneFilters()));
-
-		popup.addSeparator();
-
-		this->_per_scene_transition_menu.reset(CreatePerSceneTransitionMenu(main_window));
-		popup.addMenu(this->_per_scene_transition_menu.get());
-
-		/* ---------------------- */
-
-		QAction *multiviewAction = popup.addAction(QTStr("ShowInMultiview"));
-
-		OBSSourceAutoRelease source = this->_scene_tree_items.GetCurrentScene();
-		OBSDataAutoRelease data = obs_source_get_private_settings(source);
-
-		obs_data_set_default_bool(data, "show_in_multiview", true);
-		bool show = obs_data_get_bool(data, "show_in_multiview");
-
-		multiviewAction->setCheckable(true);
-		multiviewAction->setChecked(show);
-
-		auto showInMultiview = [main_window](OBSData data) {
-			bool show =
-			    obs_data_get_bool(data, "show_in_multiview");
-			obs_data_set_bool(data, "show_in_multiview", !show);
-			// Workaround because OBSProjector::UpdateMultiviewProjectors() isn't available to modules
-			QMetaObject::invokeMethod(main_window, "ScenesReordered");
+		auto toggleIcon = [this, showIcon, configName, item]() {
+			config_set_bool(obs_frontend_get_global_config(), "SceneTreeView", configName, !showIcon);
+			this->_scene_tree_items.SetIconVisibility(!showIcon, (StvItemModel::QITEM_TYPE)item->type());
 		};
 
-		connect(multiviewAction, &QAction::triggered,
-		    std::bind(showInMultiview, data.Get()));
-
-		copyFilters->setEnabled(obs_source_filter_count(source) > 0);
+		connect(toggleIconAction, &QAction::triggered, toggleIcon);
 	}
 
 //	popup.addSeparator();

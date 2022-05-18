@@ -76,6 +76,10 @@ class StvItemModel
 
 		QString CreateUniqueFolderName(QStandardItem *folder_item, QStandardItem *parent);
 
+		void SetIconVisibility(bool enable_visibility, QITEM_TYPE item_type);
+		void SetSceneIconVisibility(bool enable_visibility);
+		void SetFolderIconVisibility(bool enable_visibility);
+
 	private:
 		struct mime_item_data_t
 		{
@@ -97,6 +101,8 @@ class StvItemModel
 
 		obs_data_array_t *CreateFolderArray(QStandardItem &folder);
 		void LoadFolderArray(obs_data_array_t *folder_data, QStandardItem &folder);
+
+		void SetIcon(const QIcon &icon, QITEM_TYPE item_type, QStandardItem *item);
 };
 
 // Use OBS locale for translation

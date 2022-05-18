@@ -1,5 +1,7 @@
 #include "obs_scene_tree_view/stv_item_model.h"
 
+#include <util/config-file.h>
+
 #include <QMessageBox>
 #include <QLineEdit>
 #include <QMimeData>
@@ -11,8 +13,11 @@ StvFolderItem::StvFolderItem(const QString &text)
 {
 	this->setDropEnabled(true);
 
-	//QMainWindow *main_window = reinterpret_cast<QMainWindow*>(obs_frontend_get_main_window());
-	//this->setIcon(main_window->property("groupIcon").value<QIcon>());
+	QMainWindow *main_window = reinterpret_cast<QMainWindow*>(obs_frontend_get_main_window());
+	QIcon icon = config_get_bool(obs_frontend_get_global_config(), "SceneTreeView", "ShowFolderIcons") ?
+	            main_window->property("groupIcon").value<QIcon>() :
+	            QIcon();
+	this->setIcon(icon);
 }
 
 int StvFolderItem::type() const
@@ -24,6 +29,12 @@ StvSceneItem::StvSceneItem(const QString &text, obs_weak_source_t *weak)
 {
 	this->setDropEnabled(false);
 	this->setData(QVariant::fromValue(obs_weak_source_ptr({weak})), StvItemModel::OBS_SCENE);
+
+	QMainWindow *main_window = reinterpret_cast<QMainWindow*>(obs_frontend_get_main_window());
+	QIcon icon = config_get_bool(obs_frontend_get_global_config(), "SceneTreeView", "ShowSceneIcons") ?
+	            main_window->property("sceneIcon").value<QIcon>() :
+	            QIcon();
+	this->setIcon(icon);
 }
 
 int StvSceneItem::type() const
@@ -319,6 +330,30 @@ QString StvItemModel::CreateUniqueFolderName(QStandardItem *folder_item, QStanda
 	return folder_name;
 }
 
+void StvItemModel::SetIconVisibility(bool enable_visibility, QITEM_TYPE item_type)
+{
+	if(item_type == SCENE)
+		return this->SetSceneIconVisibility(enable_visibility);
+	else
+		return this->SetFolderIconVisibility(enable_visibility);
+}
+
+void StvItemModel::SetSceneIconVisibility(bool enable_visibility)
+{
+	QMainWindow *main_window = reinterpret_cast<QMainWindow*>(obs_frontend_get_main_window());
+	QIcon icon = enable_visibility ? main_window->property("sceneIcon").value<QIcon>() : QIcon();
+
+	return this->SetIcon(icon, SCENE, this->invisibleRootItem());
+}
+
+void StvItemModel::SetFolderIconVisibility(bool enable_visibility)
+{
+	QMainWindow *main_window = reinterpret_cast<QMainWindow*>(obs_frontend_get_main_window());
+	QIcon icon = enable_visibility ? main_window->property("groupIcon").value<QIcon>() : QIcon();
+
+	return this->SetIcon(icon, FOLDER, this->invisibleRootItem());
+}
+
 void StvItemModel::MoveSceneItem(obs_weak_source_t *source, int row, QStandardItem *parent_item)
 {
 	if(const auto scene_it = this->_scenes_in_tree.find(source); scene_it != this->_scenes_in_tree.end())
@@ -429,5 +464,21 @@ void StvItemModel::LoadFolderArray(obs_data_array_t *folder_data, QStandardItem 
 
 			folder.appendRow(new_folder_item);
 		}
+	}
+}
+
+void StvItemModel::SetIcon(const QIcon &icon, QITEM_TYPE item_type, QStandardItem *item)
+{
+	if(!item)
+		return;
+
+	for(int i=0; i < item->rowCount(); ++i)
+	{
+		QStandardItem *child = item->child(i);
+		if(child->type() == item_type)
+			child->setIcon(icon);
+
+		if(child->type() == FOLDER)
+			this->SetIcon(icon, item_type, child);
 	}
 }
