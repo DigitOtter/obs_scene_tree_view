@@ -513,6 +513,15 @@ void ObsSceneTreeView::ObsFrontendEvent(enum obs_frontend_event event)
 		this->LoadSceneTree(this->_scene_collection_name);
 		this->UpdateTreeView();
 	}
+	else if(event == OBS_FRONTEND_EVENT_SCENE_COLLECTION_RENAMED)
+	{
+		// TODO: Delete old scene tree from json file
+
+		this->_scene_collection_name = obs_frontend_get_current_scene_collection();
+		this->SaveSceneTree(this->_scene_collection_name);
+
+		this->UpdateTreeView();
+	}
 }
 
 void ObsSceneTreeView::ObsFrontendSave(obs_data_t */*save_data*/, bool saving)
