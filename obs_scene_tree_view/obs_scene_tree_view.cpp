@@ -196,6 +196,9 @@ void ObsSceneTreeView::on_stvTree_customContextMenuRequested(const QPoint &pos)
 	popup.addAction(QTStr("Add"),
 	                main_window, SLOT(on_actionAddScene_triggered()));
 
+	popup.addAction(obs_module_text("SceneTreeView.AddFolder"),
+	                this, SLOT(on_stvAddFolder_clicked()));
+
 	if(item)
 	{
 		if(item->type() == StvItemModel::SCENE)
