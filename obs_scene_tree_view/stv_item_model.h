@@ -6,6 +6,7 @@
 #include <obs-frontend-api.h>
 
 #include <QStandardItemModel>
+#include <QTreeView>
 #include <QtWidgets/QMainWindow>
 
 #include <string_view>
@@ -44,6 +45,7 @@ class StvItemModel
 
 		static constexpr std::string_view MIME_TYPE = "application/x-stvindexlist";
 		static constexpr std::string_view SCENE_TREE_CONFIG_FOLDER_DATA = "folder";
+		static constexpr std::string_view SCENE_TREE_CONFIG_FOLDER_EXPANDED = "is_expanded";
 		static constexpr std::string_view SCENE_TREE_CONFIG_ITEM_NAME_DATA = "name";
 
 	public:
@@ -68,8 +70,8 @@ class StvItemModel
 		QStandardItem *GetCurrentSceneItem();
 		OBSSourceAutoRelease GetCurrentScene();
 
-		void SaveSceneTree(obs_data_t *root_folder_data, const char *scene_collection);
-		void LoadSceneTree(obs_data_t *root_folder_data, const char *scene_collection);
+		void SaveSceneTree(obs_data_t *root_folder_data, const char *scene_collection, QTreeView *view);
+		void LoadSceneTree(obs_data_t *root_folder_data, const char *scene_collection, QTreeView *view);
 		void CleanupSceneTree();
 
 		QStandardItem *GetParentOrRoot(const QModelIndex &index);
@@ -99,8 +101,8 @@ class StvItemModel
 		void MoveSceneItem(obs_weak_source_t *source, int row, QStandardItem *parent_item);
 		void MoveSceneFolder(QStandardItem *item, int row, QStandardItem *parent_item);
 
-		obs_data_array_t *CreateFolderArray(QStandardItem &folder);
-		void LoadFolderArray(obs_data_array_t *folder_data, QStandardItem &folder);
+		obs_data_array_t *CreateFolderArray(QStandardItem &folder, QTreeView *view);
+		void LoadFolderArray(obs_data_array_t *folder_data, QStandardItem &folder, QTreeView *view);
 
 		void SetIcon(const QIcon &icon, QITEM_TYPE item_type, QStandardItem *item);
 };

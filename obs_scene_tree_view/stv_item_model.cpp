@@ -264,13 +264,13 @@ OBSSourceAutoRelease StvItemModel::GetCurrentScene()
 	return obs_frontend_preview_program_mode_active() ? obs_frontend_get_current_preview_scene() : obs_frontend_get_current_scene();
 }
 
-void StvItemModel::SaveSceneTree(obs_data_t *root_folder_data, const char *scene_collection)
+void StvItemModel::SaveSceneTree(obs_data_t *root_folder_data, const char *scene_collection, QTreeView *view)
 {
-	OBSDataArrayAutoRelease folder_data = this->CreateFolderArray(*this->invisibleRootItem());
+	OBSDataArrayAutoRelease folder_data = this->CreateFolderArray(*this->invisibleRootItem(), view);
 	obs_data_set_array(root_folder_data, scene_collection, folder_data);
 }
 
-void StvItemModel::LoadSceneTree(obs_data_t *root_folder_data, const char *scene_collection)
+void StvItemModel::LoadSceneTree(obs_data_t *root_folder_data, const char *scene_collection, QTreeView *view)
 {
 	QStandardItem *root_item = this->invisibleRootItem();
 
@@ -280,7 +280,7 @@ void StvItemModel::LoadSceneTree(obs_data_t *root_folder_data, const char *scene
 	// Add loaded data
 	OBSDataArrayAutoRelease folder_array = obs_data_get_array(root_folder_data, scene_collection);
 	if(folder_array)
-		this->LoadFolderArray(folder_array, *root_item);
+		this->LoadFolderArray(folder_array, *root_item, view);
 }
 
 void StvItemModel::CleanupSceneTree()
@@ -400,7 +400,7 @@ void StvItemModel::MoveSceneFolder(QStandardItem *item, int row, QStandardItem *
 	}
 }
 
-obs_data_array_t *StvItemModel::CreateFolderArray(QStandardItem &folder)
+obs_data_array_t *StvItemModel::CreateFolderArray(QStandardItem &folder, QTreeView *view)
 {
 	obs_data_array_t *folder_data = obs_data_array_create();
 
@@ -412,8 +412,9 @@ obs_data_array_t *StvItemModel::CreateFolderArray(QStandardItem &folder)
 		OBSDataAutoRelease item_data = obs_data_create();
 		if(item->type() == FOLDER)
 		{
-			OBSDataArrayAutoRelease sub_folder_data = this->CreateFolderArray(*item);
+			OBSDataArrayAutoRelease sub_folder_data = this->CreateFolderArray(*item, view);
 			obs_data_set_array(item_data, SCENE_TREE_CONFIG_FOLDER_DATA.data(), sub_folder_data);
+			obs_data_set_bool(item_data, SCENE_TREE_CONFIG_FOLDER_EXPANDED.data(), view->isExpanded(item->index()));
 			obs_data_set_string(item_data, SCENE_TREE_CONFIG_ITEM_NAME_DATA.data(), item->text().toStdString().c_str());
 		}
 		else
@@ -429,7 +430,7 @@ obs_data_array_t *StvItemModel::CreateFolderArray(QStandardItem &folder)
 	return folder_data;
 }
 
-void StvItemModel::LoadFolderArray(obs_data_array_t *folder_data, QStandardItem &folder)
+void StvItemModel::LoadFolderArray(obs_data_array_t *folder_data, QStandardItem &folder, QTreeView *view)
 {
 	const size_t item_count = obs_data_array_count(folder_data);
 	for(size_t i=0; i < item_count; ++i)
@@ -460,9 +461,12 @@ void StvItemModel::LoadFolderArray(obs_data_array_t *folder_data, QStandardItem 
 		else
 		{
 			StvFolderItem *new_folder_item = new StvFolderItem(item_name);
-			this->LoadFolderArray(folder_data, *new_folder_item);
+			this->LoadFolderArray(folder_data, *new_folder_item, view);
 
 			folder.appendRow(new_folder_item);
+
+			const bool is_expanded = obs_data_get_bool(item_data, SCENE_TREE_CONFIG_FOLDER_EXPANDED.data());
+			view->setExpanded(new_folder_item->index(), is_expanded);
 		}
 	}
 }

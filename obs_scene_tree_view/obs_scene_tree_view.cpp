@@ -98,7 +98,7 @@ void ObsSceneTreeView::SaveSceneTree(const char *scene_collection)
 	if(!stv_data)
 		stv_data = obs_data_create();
 
-	this->_scene_tree_items.SaveSceneTree(stv_data, scene_collection);
+	this->_scene_tree_items.SaveSceneTree(stv_data, scene_collection, this->_stv_dock.stvTree);
 
 	if(!obs_data_save_json(stv_data, stv_config_file_path))
 		blog(LOG_WARNING, "[%s] Failed to save scene tree in '%s'", obs_module_name(), stv_config_file_path.Get());
@@ -111,7 +111,7 @@ void ObsSceneTreeView::LoadSceneTree(const char *scene_collection)
 	BPtr<char> stv_config_file_path = obs_module_config_path(SCENE_TREE_CONFIG_FILE.data());
 
 	OBSDataAutoRelease stv_data = obs_data_create_from_json_file(stv_config_file_path);
-	this->_scene_tree_items.LoadSceneTree(stv_data, scene_collection);
+	this->_scene_tree_items.LoadSceneTree(stv_data, scene_collection, this->_stv_dock.stvTree);
 }
 
 void ObsSceneTreeView::UpdateTreeView()
