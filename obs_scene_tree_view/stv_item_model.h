@@ -102,7 +102,7 @@ class StvItemModel
 		void MoveSceneFolder(QStandardItem *item, int row, QStandardItem *parent_item);
 
 		obs_data_array_t *CreateFolderArray(QStandardItem &folder, QTreeView *view);
-		void LoadFolderArray(obs_data_array_t *folder_data, QStandardItem &folder, QTreeView *view);
+		void LoadFolderArray(obs_data_array_t *folder_data, QStandardItem &folder, std::list<StvFolderItem *> &expandable_folders);
 
 		void SetIcon(const QIcon &icon, QITEM_TYPE item_type, QStandardItem *item);
 };

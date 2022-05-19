@@ -280,7 +280,15 @@ void StvItemModel::LoadSceneTree(obs_data_t *root_folder_data, const char *scene
 	// Add loaded data
 	OBSDataArrayAutoRelease folder_array = obs_data_get_array(root_folder_data, scene_collection);
 	if(folder_array)
-		this->LoadFolderArray(folder_array, *root_item, view);
+	{
+		std::list<StvFolderItem*> expandable_folders;
+		this->LoadFolderArray(folder_array, *root_item, expandable_folders);
+
+		for(auto &item : expandable_folders)
+		{
+			view->setExpanded(item->index(), true);
+		}
+	}
 }
 
 void StvItemModel::CleanupSceneTree()
@@ -430,7 +438,7 @@ obs_data_array_t *StvItemModel::CreateFolderArray(QStandardItem &folder, QTreeVi
 	return folder_data;
 }
 
-void StvItemModel::LoadFolderArray(obs_data_array_t *folder_data, QStandardItem &folder, QTreeView *view)
+void StvItemModel::LoadFolderArray(obs_data_array_t *folder_data, QStandardItem &folder, std::list<StvFolderItem*> &expandable_folders)
 {
 	const size_t item_count = obs_data_array_count(folder_data);
 	for(size_t i=0; i < item_count; ++i)
@@ -461,12 +469,14 @@ void StvItemModel::LoadFolderArray(obs_data_array_t *folder_data, QStandardItem 
 		else
 		{
 			StvFolderItem *new_folder_item = new StvFolderItem(item_name);
-			this->LoadFolderArray(folder_data, *new_folder_item, view);
+			this->LoadFolderArray(folder_data, *new_folder_item, expandable_folders);
 
 			folder.appendRow(new_folder_item);
 
-			const bool is_expanded = obs_data_get_bool(item_data, SCENE_TREE_CONFIG_FOLDER_EXPANDED.data());
-			view->setExpanded(new_folder_item->index(), is_expanded);
+			// Check if folder should be expanded.
+			// The folders are expanded after the tree is completely created to prevent new inserts from closing the folders again
+			if(obs_data_get_bool(item_data, SCENE_TREE_CONFIG_FOLDER_EXPANDED.data()))
+				expandable_folders.push_back(new_folder_item);
 		}
 	}
 }
