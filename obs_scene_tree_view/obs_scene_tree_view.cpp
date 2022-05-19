@@ -193,7 +193,7 @@ void ObsSceneTreeView::on_stvTree_customContextMenuRequested(const QPoint &pos)
 	QMenu popup(this);
 //	QMenu order(QTStr("Basic.MainMenu.Edit.Order"), this);
 
-	popup.addAction(QTStr("Add"),
+	popup.addAction(obs_module_text("SceneTreeView.AddScene"),
 	                main_window, SLOT(on_actionAddScene_triggered()));
 
 	popup.addAction(obs_module_text("SceneTreeView.AddFolder"),
