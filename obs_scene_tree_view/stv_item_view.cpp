@@ -23,7 +23,7 @@ void StvItemView::selectionChanged(const QItemSelection &selected, const QItemSe
 	assert(selected.indexes().size() == 1);
 	QStandardItem *item = this->_model->itemFromIndex(selected.indexes().front());
 	if(item->type() == StvItemModel::SCENE)
-		this->_model->SetSelectedScene(item);
+		this->_model->SetSelectedScene(item, obs_frontend_preview_program_mode_active());
 }
 
 void StvItemView::EditSelectedItem()
@@ -44,13 +44,7 @@ void StvItemView::mouseDoubleClickEvent(QMouseEvent *event)
 			QStandardItem *item = this->_model->itemFromIndex(this->indexAt(event->pos()));
 			if(item && item->type() == StvItemModel::SCENE)
 			{
-				this->_model->SetSelectedScene(item);
-
-				obs_weak_source_t *weak = item->data(StvItemModel::QDATA_ROLE::OBS_SCENE).value<obs_weak_source_ptr>().ptr;
-				OBSSourceAutoRelease source = OBSGetStrongRef(weak);
-				if(source)
-					obs_frontend_set_current_scene(source);
-
+				this->_model->SetSelectedScene(item, false, true);
 				return;
 			}
 		}

@@ -29,7 +29,6 @@ class ObsSceneTreeView
 	protected slots:
 		void UpdateTreeView();
 
-		void on_stvTree_clicked(const QModelIndex &index);
 		void on_stvAddFolder_clicked();
 		void on_stvRemove_released();
 

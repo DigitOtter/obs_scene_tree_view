@@ -66,7 +66,7 @@ class StvItemModel
 
 		bool CheckFolderNameUniqueness(const QString &name, QStandardItem *parent, QStandardItem *item_to_skip = nullptr);
 
-		void SetSelectedScene(QStandardItem *item);
+		void SetSelectedScene(QStandardItem *item, bool set_preview_scene, bool force_set_scene = false);
 		QStandardItem *GetCurrentSceneItem();
 		OBSSourceAutoRelease GetCurrentScene();
 

@@ -231,16 +231,19 @@ bool StvItemModel::CheckFolderNameUniqueness(const QString &name, QStandardItem 
 	return true;
 }
 
-void StvItemModel::SetSelectedScene(QStandardItem *item)
+void StvItemModel::SetSelectedScene(QStandardItem *item, bool set_preview_scene, bool force_set_scene)
 {
 	obs_weak_source_t *weak = item->data(QDATA_ROLE::OBS_SCENE).value<obs_weak_source_ptr>().ptr;
 	OBSSourceAutoRelease source = OBSGetStrongRef(weak);
 	if(source)
 	{
-		if(obs_frontend_preview_program_mode_active())
+		if(!set_preview_scene)
+		{
+			if(force_set_scene || OBSSourceAutoRelease(obs_frontend_get_current_scene()).Get() != source)
+				obs_frontend_set_current_scene(source);
+		}
+		else if(force_set_scene || OBSSourceAutoRelease(obs_frontend_get_current_preview_scene()).Get() != source)
 			obs_frontend_set_current_preview_scene(source);
-		else
-			obs_frontend_set_current_scene(source);
 	}
 }
 

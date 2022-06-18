@@ -126,14 +126,6 @@ void ObsSceneTreeView::UpdateTreeView()
 	this->SaveSceneTree(this->_scene_collection_name);
 }
 
-void ObsSceneTreeView::on_stvTree_clicked(const QModelIndex &index)
-{
-	QStandardItem *item = this->_scene_tree_items.itemFromIndex(index);
-	assert(item);
-
-	this->_scene_tree_items.SetSelectedScene(item);
-}
-
 void ObsSceneTreeView::on_stvAddFolder_clicked()
 {
 	int row;
@@ -344,7 +336,7 @@ void ObsSceneTreeView::on_SceneNameEdited(QWidget *editor, QAbstractItemDelegate
 void ObsSceneTreeView::SelectCurrentScene()
 {
 	QStandardItem *item = this->_scene_tree_items.GetCurrentSceneItem();
-	if(item)
+	if(item && item->index() != this->_stv_dock.stvTree->currentIndex())
 		QMetaObject::invokeMethod(this->_stv_dock.stvTree, "setCurrentIndex", Q_ARG(QModelIndex, item->index()));
 }
 
@@ -363,7 +355,7 @@ void ObsSceneTreeView::RemoveFolder(QStandardItem *folder)
 			obs_weak_source_t *weak = item->data(StvItemModel::OBS_SCENE).value<obs_weak_source_ptr>().ptr;
 			OBSSourceAutoRelease source = OBSGetStrongRef(weak);
 
-			this->_scene_tree_items.SetSelectedScene(item);
+			this->_scene_tree_items.SetSelectedScene(item, obs_frontend_preview_program_mode_active());
 			QMetaObject::invokeMethod(this->_remove_scene_act, "triggered");
 		}
 		else
