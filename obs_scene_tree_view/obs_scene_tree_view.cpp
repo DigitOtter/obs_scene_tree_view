@@ -3,7 +3,7 @@
 #include "obs_scene_tree_view/version.h"
 
 #include <QLineEdit>
-#include <QtWidgets/QAction>
+#include <QAction>
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QListWidget>
 #include <QtWidgets/QMainWindow>

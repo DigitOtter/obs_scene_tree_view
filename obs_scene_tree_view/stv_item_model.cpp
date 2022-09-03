@@ -5,6 +5,7 @@
 #include <QMessageBox>
 #include <QLineEdit>
 #include <QMimeData>
+#include <QRegularExpression>
 #include <QtWidgets/QMainWindow>
 
 
@@ -323,7 +324,7 @@ QString StvItemModel::CreateUniqueFolderName(QStandardItem *folder_item, QStanda
 	QString folder_name = folder_item->text();
 	if(!this->CheckFolderNameUniqueness(folder_name, parent, folder_item))
 	{
-		QString format = folder_name.replace(QRegExp("\\d+$"), "%1");
+		QString format = folder_name.replace(QRegularExpression("\\d+$"), "%1");
 		if(!format.endsWith("%1"))
 			format += " %1";
 

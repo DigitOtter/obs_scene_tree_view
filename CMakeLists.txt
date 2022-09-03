@@ -21,9 +21,10 @@ endif()
 if(NOT ${BUILD_IN_OBS})
 	set(CMAKE_CXX_STANDARD 20)
 
-	find_package(Qt5 REQUIRED COMPONENTS Widgets)
+	find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
-	find_package(LibObs REQUIRED)
+	find_package(libobs REQUIRED)
+	find_package(obs-frontend-api REQUIRED)
 
 	if(NOT DEFINED LIBOBS_PLUGIN_DESTINATION)
 		set(LIBOBS_PLUGIN_DESTINATION "lib/obs-plugins")
@@ -41,9 +42,6 @@ if(NOT ${BUILD_IN_OBS})
 	endif()
 endif()
 
-add_library(LibObs::libobs ALIAS libobs)
-
-
 set(LIB_SRC_FILES
 	obs_scene_tree_view/obs_scene_tree_view.cpp
 	obs_scene_tree_view/stv_item_model.cpp
@@ -57,7 +55,7 @@ configure_file(cmake/version.h.in "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_
 
 
 ##########################################
-## Qt5 UI
+## Qt6 UI
 set(CMAKE_AUTOUIC_SEARCH_PATHS ${CMAKE_AUTOUIC_SEARCH_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/forms")
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
@@ -82,9 +80,9 @@ target_include_directories(${LIBRARY_NAME}
 
 target_link_libraries(${LIBRARY_NAME}
 	PUBLIC
-		LibObs::libobs
-		obs-frontend-api
-		Qt5::Widgets
+		OBS::libobs
+		OBS::obs-frontend-api
+		Qt6::Widgets
 
 	PRIVATE
 )
