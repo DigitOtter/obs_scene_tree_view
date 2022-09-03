@@ -15,37 +15,41 @@ cmake_minimum_required(VERSION 3.20)
 project("${PROJECT_NAME}" VERSION 0.0.2)
 
 if(NOT DEFINED BUILD_IN_OBS)
-	set(BUILD_IN_OBS OFF)
+        set(BUILD_IN_OBS OFF)
 endif()
 
+find_package(Qt6 REQUIRED COMPONENTS Widgets)
+
 if(NOT ${BUILD_IN_OBS})
-	set(CMAKE_CXX_STANDARD 20)
+        set(CMAKE_CXX_STANDARD 20)
 
-	find_package(Qt6 REQUIRED COMPONENTS Widgets)
+        find_package(libobs REQUIRED)
+        find_package(obs-frontend-api REQUIRED)
 
-	find_package(libobs REQUIRED)
-	find_package(obs-frontend-api REQUIRED)
+        if(NOT DEFINED LIBOBS_PLUGIN_DESTINATION)
+                set(LIBOBS_PLUGIN_DESTINATION "lib/obs-plugins")
+        endif()
 
-	if(NOT DEFINED LIBOBS_PLUGIN_DESTINATION)
-		set(LIBOBS_PLUGIN_DESTINATION "lib/obs-plugins")
-	endif()
+        if(NOT DEFINED LIBOBS_PLUGIN_DATA_DESTINATION)
+                set(LIBOBS_PLUGIN_DATA_DESTINATION "share/obs/obs-plugins")
+        endif()
 
-	if(NOT DEFINED LIBOBS_PLUGIN_DATA_DESTINATION)
-		set(LIBOBS_PLUGIN_DATA_DESTINATION "share/obs/obs-plugins")
-	endif()
+        set(OBS_PLUGIN_LIB_DIR "${LIBOBS_PLUGIN_DESTINATION}" CACHE PATH "Path to obs plugins (relative to CMAKE_INSTALL_PREFIX)")
+        set(OBS_PLUGIN_DATA_DIR "${LIBOBS_PLUGIN_DATA_DESTINATION}" CACHE PATH "Path to scene tree view data dir (relative to CMAKE_INSTALL_PREFIX)")
 
-	set(OBS_PLUGIN_LIB_DIR "${LIBOBS_PLUGIN_DESTINATION}" CACHE PATH "Path to obs plugins (relative to CMAKE_INSTALL_PREFIX)")
-	set(OBS_PLUGIN_DATA_DIR "${LIBOBS_PLUGIN_DATA_DESTINATION}" CACHE PATH "Path to scene tree view data dir (relative to CMAKE_INSTALL_PREFIX)")
+        if(WIN32)
+                message(WARNING "Building ${PROJECT_NAME} outside of OBS is currently not supported")
+        endif()
+endif()
 
-	if(WIN32)
-		message(WARNING "Building ${PROJECT_NAME} outside of OBS is currently not supported")
-	endif()
+if(NOT TARGET OBS::obs-frontend-api)
+    add_library(OBS::obs-frontend-api ALIAS obs-frontend-api)
 endif()
 
 set(LIB_SRC_FILES
-	obs_scene_tree_view/obs_scene_tree_view.cpp
-	obs_scene_tree_view/stv_item_model.cpp
-	obs_scene_tree_view/stv_item_view.cpp
+        obs_scene_tree_view/obs_scene_tree_view.cpp
+        obs_scene_tree_view/stv_item_model.cpp
+        obs_scene_tree_view/stv_item_view.cpp
 )
 
 
@@ -70,34 +74,34 @@ target_compile_options(${LIBRARY_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<
 set_target_properties(${LIBRARY_NAME} PROPERTIES PREFIX "")
 
 target_include_directories(${LIBRARY_NAME}
-	PUBLIC
-		"$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
-		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
-		"$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
+        PUBLIC
+                "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
+                "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
+                "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
 
-	PRIVATE
+        PRIVATE
 )
 
 target_link_libraries(${LIBRARY_NAME}
-	PUBLIC
-		OBS::libobs
-		OBS::obs-frontend-api
-		Qt6::Widgets
+        PUBLIC
+                OBS::libobs
+                OBS::obs-frontend-api
+                Qt6::Widgets
 
-	PRIVATE
+        PRIVATE
 )
 
 
 ##########################################
 ## Install files
 if(${BUILD_IN_OBS})
-	install_obs_plugin_with_data(${LIBRARY_NAME} data)
+        install_obs_plugin_with_data(${LIBRARY_NAME} data)
 else()
-	install(TARGETS ${LIBRARY_NAME}
-		EXPORT ${LIB_EXPORT_NAME}
-		LIBRARY DESTINATION "${OBS_PLUGIN_LIB_DIR}"
-		ARCHIVE DESTINATION "${OBS_PLUGIN_LIB_DIR}")
+        install(TARGETS ${LIBRARY_NAME}
+                EXPORT ${LIB_EXPORT_NAME}
+                LIBRARY DESTINATION "${OBS_PLUGIN_LIB_DIR}"
+                ARCHIVE DESTINATION "${OBS_PLUGIN_LIB_DIR}")
 
-	install(DIRECTORY "data/locale"
-		DESTINATION "${OBS_PLUGIN_DATA_DIR}/${PROJECT_NAME}")
+        install(DIRECTORY "data/locale"
+                DESTINATION "${OBS_PLUGIN_DATA_DIR}/${PROJECT_NAME}")
 endif()
