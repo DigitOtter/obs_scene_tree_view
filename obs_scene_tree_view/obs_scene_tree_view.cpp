@@ -55,10 +55,12 @@ MODULE_EXPORT void obs_module_unload()
 ObsSceneTreeView::ObsSceneTreeView(QMainWindow *main_window)
     : QDockWidget(dynamic_cast<QWidget*>(main_window)),
       _add_scene_act(main_window->findChild<QAction*>("actionAddScene")),
-      _remove_scene_act(main_window->findChild<QAction*>("actionRemoveScene"))
+      _remove_scene_act(main_window->findChild<QAction*>("actionRemoveScene")),
+      _toggle_toolbars_scene_act(main_window->findChild<QAction*>("toggleListboxToolbars"))
 {
-	config_set_default_bool(obs_frontend_get_global_config(), "SceneTreeView", "ShowSceneIcons", false);
-	config_set_default_bool(obs_frontend_get_global_config(), "SceneTreeView", "ShowFolderIcons", false);
+	config_t *const global_config = obs_frontend_get_global_config();
+	config_set_default_bool(global_config, "SceneTreeView", "ShowSceneIcons", false);
+	config_set_default_bool(global_config, "SceneTreeView", "ShowFolderIcons", false);
 
 	assert(this->_add_scene_act);
 	assert(this->_remove_scene_act);
@@ -67,6 +69,9 @@ ObsSceneTreeView::ObsSceneTreeView(QMainWindow *main_window)
 
 	this->_stv_dock.stvTree->SetItemModel(&this->_scene_tree_items);
 	this->_stv_dock.stvTree->setDefaultDropAction(Qt::DropAction::MoveAction);
+
+	const bool show_icons = config_get_bool(global_config, "BasicWindow", "ShowListboxToolbars");
+	this->on_toggleListboxToolbars(show_icons);
 
 	// Add callback to obs scene list change event
 	obs_frontend_add_event_callback(&ObsSceneTreeView::obs_frontend_event_cb, this);
@@ -77,6 +82,8 @@ ObsSceneTreeView::ObsSceneTreeView(QMainWindow *main_window)
 	QObject::connect(this->_stv_dock.stvTree->itemDelegate(), SIGNAL(closeEditor(QWidget*,QAbstractItemDelegate::EndEditHint)),
 	                 this, SLOT(on_SceneNameEdited(QWidget*,QAbstractItemDelegate::EndEditHint)));
 	                //main_window, SLOT(SceneNameEdited(QWidget*,QAbstractItemDelegate::EndEditHint)));
+
+	QObject::connect(this->_toggle_toolbars_scene_act, &QAction::triggered, this, &ObsSceneTreeView::on_toggleListboxToolbars);
 
 	this->_stv_dock.stvTree->setModel(&(this->_scene_tree_items));
 }
@@ -124,6 +131,11 @@ void ObsSceneTreeView::UpdateTreeView()
 	obs_frontend_source_list_free(&scene_list);
 
 	this->SaveSceneTree(this->_scene_collection_name);
+}
+
+void ObsSceneTreeView::on_toggleListboxToolbars(bool visible)
+{
+	this->_stv_dock.listbox->setVisible(visible);
 }
 
 void ObsSceneTreeView::on_stvAddFolder_clicked()

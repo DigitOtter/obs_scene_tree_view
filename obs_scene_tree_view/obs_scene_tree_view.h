@@ -29,6 +29,8 @@ class ObsSceneTreeView
 	protected slots:
 		void UpdateTreeView();
 
+		void on_toggleListboxToolbars(bool visible);
+
 		void on_stvAddFolder_clicked();
 		void on_stvRemove_released();
 
@@ -40,6 +42,7 @@ class ObsSceneTreeView
 	private:
 		QAction *_add_scene_act = nullptr;
 		QAction *_remove_scene_act = nullptr;
+		QAction *_toggle_toolbars_scene_act = nullptr;
 
 		std::unique_ptr<QMenu> _per_scene_transition_menu;
 
