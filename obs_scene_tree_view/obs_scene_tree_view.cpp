@@ -97,7 +97,8 @@ ObsSceneTreeView::~ObsSceneTreeView()
 
 void ObsSceneTreeView::SaveSceneTree(const char *scene_collection)
 {
-	assert(scene_collection);
+	if(!scene_collection)
+		return;
 
 	BPtr<char> stv_config_file_path = obs_module_config_path(SCENE_TREE_CONFIG_FILE.data());
 
@@ -511,7 +512,10 @@ void ObsSceneTreeView::ObsFrontendEvent(enum obs_frontend_event event)
 	else if(event == OBS_FRONTEND_EVENT_SCENE_CHANGED || event == OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED)
 		this->SelectCurrentScene();
 	else if(event == OBS_FRONTEND_EVENT_SCENE_COLLECTION_CLEANUP)
+	{
 		this->_scene_tree_items.CleanupSceneTree();
+		this->_scene_collection_name = nullptr;
+	}
 	else if(event == OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING)
 		this->SaveSceneTree(this->_scene_collection_name);
 	else if(event == OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGED)
