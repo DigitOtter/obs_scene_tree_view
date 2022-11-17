@@ -104,8 +104,6 @@ class StvItemModel
 		obs_data_array_t *CreateFolderArray(QStandardItem &folder, QTreeView *view);
 		void LoadFolderArray(obs_data_array_t *folder_data, QStandardItem &folder, std::list<StvFolderItem *> &expandable_folders);
 
-		bool IsSceneInFolder(const obs_source_t *scene_source, const QStandardItem &folder) const;
-
 		void SetIcon(const QIcon &icon, QITEM_TYPE item_type, QStandardItem *item);
 };
 
