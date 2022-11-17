@@ -462,8 +462,13 @@ void StvItemModel::LoadFolderArray(obs_data_array_t *folder_data, QStandardItem 
 
 			{
 				OBSSource source = obs_scene_get_source(scene);
-				OBSWeakSource weak = obs_source_get_weak_source(source);
 
+				// Skip if scene already in folder
+				// (see issue https://github.com/DigitOtter/obs_scene_tree_view/issues/19)
+				if(this->IsSceneInFolder(source, folder))
+					continue;
+
+				OBSWeakSource weak = obs_source_get_weak_source(source);
 				StvSceneItem *new_scene_item = new StvSceneItem(item_name, weak);
 				folder.appendRow(new_scene_item);
 
@@ -483,6 +488,23 @@ void StvItemModel::LoadFolderArray(obs_data_array_t *folder_data, QStandardItem 
 				expandable_folders.push_back(new_folder_item);
 		}
 	}
+}
+
+bool StvItemModel::IsSceneInFolder(const obs_source_t *scene_source, const QStandardItem &folder) const
+{
+	for(int i=0; i < folder.rowCount(); ++i)
+	{
+		QStandardItem *item = folder.child(i);
+		if(item->type() == StvItemModel::SCENE)
+		{
+			obs_weak_source_t *weak = item->data(StvItemModel::OBS_SCENE).value<obs_weak_source_ptr>().ptr;
+			OBSSourceAutoRelease item_source = OBSGetStrongRef(weak);
+			if(item_source == scene_source)
+				return true;
+		}
+	}
+
+	return false;
 }
 
 void StvItemModel::SetIcon(const QIcon &icon, QITEM_TYPE item_type, QStandardItem *item)
