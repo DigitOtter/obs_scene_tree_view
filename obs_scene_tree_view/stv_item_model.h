@@ -43,6 +43,11 @@ class StvItemModel
 {
 		Q_OBJECT
 
+		struct SCENE_SIZE_T
+		{
+			uint32_t cx, cy;
+		};
+
 		static constexpr std::string_view MIME_TYPE = "application/x-stvindexlist";
 		static constexpr std::string_view SCENE_TREE_CONFIG_FOLDER_DATA = "folder";
 		static constexpr std::string_view SCENE_TREE_CONFIG_FOLDER_EXPANDED = "is_expanded";
@@ -82,6 +87,10 @@ class StvItemModel
 		void SetSceneIconVisibility(bool enable_visibility);
 		void SetFolderIconVisibility(bool enable_visibility);
 
+		void UpdateSceneSize();
+		bool IsManagedScene(obs_scene_t *scene) const;
+		bool IsManagedScene(obs_source_t *scene_source) const;
+
 	private:
 		struct mime_item_data_t
 		{
@@ -97,6 +106,8 @@ class StvItemModel
 		using source_map_t = std::map<obs_weak_source_t*, QStandardItem*, SceneComp>;
 
 		source_map_t _scenes_in_tree;
+
+		SCENE_SIZE_T _scene_size;
 
 		void MoveSceneItem(obs_weak_source_t *source, int row, QStandardItem *parent_item);
 		void MoveSceneFolder(QStandardItem *item, int row, QStandardItem *parent_item);

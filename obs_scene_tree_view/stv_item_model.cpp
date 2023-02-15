@@ -130,12 +130,17 @@ bool StvItemModel::dropMimeData(const QMimeData *data, Qt::DropAction action, in
 
 void StvItemModel::UpdateTree(obs_frontend_source_list &scene_list, const QModelIndex &selected_index)
 {
+	this->UpdateSceneSize();
+
 	source_map_t new_scene_tree;
 
 	for (size_t i = 0; i < scene_list.sources.num; i++)
 	{
 		obs_source_t *source = scene_list.sources.array[i];
 		assert(obs_scene_from_source(source) != nullptr);
+
+		if(!this->IsManagedScene(source))
+			continue;
 
 		source_map_t::iterator scene_it;
 
@@ -276,6 +281,8 @@ void StvItemModel::SaveSceneTree(obs_data_t *root_folder_data, const char *scene
 
 void StvItemModel::LoadSceneTree(obs_data_t *root_folder_data, const char *scene_collection, QTreeView *view)
 {
+	this->UpdateSceneSize();
+
 	QStandardItem *root_item = this->invisibleRootItem();
 
 	// Erase previous data
@@ -364,6 +371,26 @@ void StvItemModel::SetFolderIconVisibility(bool enable_visibility)
 	QIcon icon = enable_visibility ? main_window->property("groupIcon").value<QIcon>() : QIcon();
 
 	return this->SetIcon(icon, FOLDER, this->invisibleRootItem());
+}
+
+void StvItemModel::UpdateSceneSize()
+{
+	this->_scene_size.cx = config_get_int(obs_frontend_get_profile_config(), "Video", "BaseCX");
+	this->_scene_size.cy = config_get_int(obs_frontend_get_profile_config(), "Video", "BaseCY");
+}
+
+bool StvItemModel::IsManagedScene(obs_scene_t *scene) const
+{
+	OBSSource source = obs_scene_get_source(scene);
+	return this->IsManagedScene(source);
+}
+
+bool StvItemModel::IsManagedScene(obs_source_t *scene_source) const
+{
+	OBSDataAutoRelease settings = obs_source_get_settings(scene_source);
+	return	obs_data_get_bool(settings, "custom_size") == false /*&&
+			obs_data_get_bool(settings, "cx") == this->_scene_size.cx &&
+					obs_data_get_bool(settings, "cy") == this->_scene_size.cy*/;
 }
 
 void StvItemModel::MoveSceneItem(obs_weak_source_t *source, int row, QStandardItem *parent_item)
@@ -457,7 +484,7 @@ void StvItemModel::LoadFolderArray(obs_data_array_t *folder_data, QStandardItem 
 		{
 			// Add scene to folder, skip if scene doesn't exist anymore
 			OBSSceneAutoRelease scene = obs_get_scene_by_name(item_name);
-			if(!scene)
+			if(!scene || !this->IsManagedScene(scene))
 				continue;
 
 			{
