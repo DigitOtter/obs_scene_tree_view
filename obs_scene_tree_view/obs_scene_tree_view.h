@@ -37,7 +37,7 @@ class ObsSceneTreeView
 		// Copied from OBS, OBSBasic::on_scenes_customContextMenuRequested()
 		void on_stvTree_customContextMenuRequested(const QPoint &pos);
 
-		void on_SceneNameEdited(QWidget *editor, QAbstractItemDelegate::EndEditHint hint = QAbstractItemDelegate::NoHint);
+		void on_SceneNameEdited(QWidget *editor);
 
 	private:
 		QAction *_add_scene_act = nullptr;

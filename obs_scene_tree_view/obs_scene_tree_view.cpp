@@ -80,7 +80,7 @@ ObsSceneTreeView::ObsSceneTreeView(QMainWindow *main_window)
 	QObject::connect(this->_stv_dock.stvAdd, &QToolButton::released, this->_add_scene_act, &QAction::trigger);
 
 	QObject::connect(this->_stv_dock.stvTree->itemDelegate(), SIGNAL(closeEditor(QWidget*,QAbstractItemDelegate::EndEditHint)),
-	                 this, SLOT(on_SceneNameEdited(QWidget*,QAbstractItemDelegate::EndEditHint)));
+	                 this, SLOT(on_SceneNameEdited(QWidget*)));
 	                //main_window, SLOT(SceneNameEdited(QWidget*,QAbstractItemDelegate::EndEditHint)));
 
 	QObject::connect(this->_toggle_toolbars_scene_act, &QAction::triggered, this, &ObsSceneTreeView::on_toggleListboxToolbars);
@@ -328,13 +328,13 @@ void ObsSceneTreeView::on_stvTree_customContextMenuRequested(const QPoint &pos)
 	popup.exec(QCursor::pos());
 }
 
-void ObsSceneTreeView::on_SceneNameEdited(QWidget *editor, QAbstractItemDelegate::EndEditHint hint)
+void ObsSceneTreeView::on_SceneNameEdited(QWidget *editor)
 {
 	QStandardItem *selected = this->_scene_tree_items.itemFromIndex(this->_stv_dock.stvTree->currentIndex());
 	if(selected->type() == StvItemModel::SCENE)
 	{
 		QMainWindow *main_window = reinterpret_cast<QMainWindow*>(obs_frontend_get_main_window());
-		QMetaObject::invokeMethod(main_window, "SceneNameEdited", Q_ARG(QWidget*, editor), Q_ARG(QAbstractItemDelegate::EndEditHint, hint));
+		QMetaObject::invokeMethod(main_window, "SceneNameEdited", Q_ARG(QWidget*, editor));
 	}
 	else
 	{
