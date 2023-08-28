@@ -66,6 +66,7 @@ ObsSceneTreeView::ObsSceneTreeView(QMainWindow *main_window)
 	assert(this->_remove_scene_act);
 
 	this->_stv_dock.setupUi(this);
+	this->hide();
 
 	this->_stv_dock.stvTree->SetItemModel(&this->_scene_tree_items);
 	this->_stv_dock.stvTree->setDefaultDropAction(Qt::DropAction::MoveAction);
